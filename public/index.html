@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💕 我们的生活费管家</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 30%, #e1bee7 60%, #fce4ec 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .hearts-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+
+        .heart-float {
+            position: absolute;
+            animation: floatUp 8s infinite ease-in-out;
+            opacity: 0.3;
+            font-size: 24px;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(233, 30, 99, 0.15), 0 4px 16px rgba(0, 0, 0, 0.08);
+            padding: 40px 36px;
+            max-width: 540px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            border: 1px solid rgba(233, 30, 99, 0.1);
+        }
+
+        .header { text-align: center; margin-bottom: 28px; }
+
+        .header .icon { font-size: 48px; margin-bottom: 8px; animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .header h1 { font-size: 26px; color: #d81b60; font-weight: 700; margin-bottom: 4px; letter-spacing: 2px; }
+
+        .header .subtitle { font-size: 14px; color: #ad1457; opacity: 0.7; letter-spacing: 1px; }
+
+        /* 连接状态 */
+        .conn-status {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        .conn-status.online {
+            color: #2e7d32;
+            background: #e8f5e9;
+        }
+        .conn-status.offline {
+            color: #c62828;
+            background: #ffebee;
+        }
+        .conn-status .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: blink 1.5s infinite;
+        }
+        .conn-status.online .dot { background: #4caf50; }
+        .conn-status.offline .dot { background: #f44336; animation: none; }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* 人物卡片 */
+        .person-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid #fce4ec;
+            transition: all 0.3s ease;
+        }
+        .person-card:hover { box-shadow: 0 4px 20px rgba(233, 30, 99, 0.12); transform: translateY(-2px); }
+        .person-card.boy { border-left: 4px solid #42a5f5; }
+        .person-card.girl { border-left: 4px solid #ec407a; }
+
+        .person-header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+
+        .person-avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 24px;
+        }
+        .boy .person-avatar { background: #e3f2fd; }
+        .girl .person-avatar { background: #fce4ec; }
+
+        .person-name { font-size: 18px; font-weight: 600; flex: 1; }
+        .boy .person-name { color: #1976d2; }
+        .girl .person-name { color: #c62828; }
+
+        .days-badge {
+            display: flex; align-items: center; gap: 4px;
+            padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+        }
+        .boy .days-badge { background: #e3f2fd; color: #1976d2; }
+        .girl .days-badge { background: #fce4ec; color: #c62828; }
+
+        .person-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+        .field-group { display: flex; flex-direction: column; gap: 4px; }
+
+        .field-group label { font-size: 11px; color: #999; font-weight: 500; letter-spacing: 0.5px; white-space: nowrap; }
+
+        .field-group .input-wrapper { position: relative; }
+
+        .field-group .prefix {
+            position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+            font-size: 14px; color: #e91e63; font-weight: 600; pointer-events: none; z-index: 2;
+        }
+
+        .field-group input {
+            width: 100%; padding: 10px 10px 10px 26px;
+            border: 2px solid #f3e5f5; border-radius: 10px;
+            font-size: 15px; font-weight: 500; color: #333;
+            outline: none; transition: all 0.2s ease; background: #fafafa;
+        }
+        .field-group .no-prefix { padding-left: 10px; text-align: center; }
+
+        .field-group input:focus {
+            border-color: #f48fb1; background: #fff;
+            box-shadow: 0 0 0 3px rgba(244, 143, 177, 0.1);
+        }
+        .field-group input::placeholder { color: #ccc; font-weight: 400; }
+
+        /* 输入动画 */
+        .field-group input.remote-update {
+            animation: flashBg 0.6s ease;
+        }
+        @keyframes flashBg {
+            0% { background: #fff9c4; }
+            100% { background: #fafafa; }
+        }
+
+        .payday-hint {
+            font-size: 11px; color: #aaa; margin-top: 12px;
+            padding: 8px 12px; background: #fafafa; border-radius: 8px; line-height: 1.5;
+        }
+        .payday-hint .next-date { color: #d81b60; font-weight: 600; }
+
+        /* 结果展示 */
+        .result-area { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .result-card {
+            background: linear-gradient(135deg, #fff, #fafafa);
+            border-radius: 16px; padding: 18px 14px; text-align: center;
+            border: 2px solid #f3e5f5; transition: all 0.3s ease;
+        }
+        .result-card.boy-result { border-color: #bbdefb; }
+        .result-card.girl-result { border-color: #f8bbd0; }
+
+        .result-card .result-label { font-size: 11px; color: #aaa; margin-bottom: 8px; letter-spacing: 1px; }
+
+        .result-card .result-amount {
+            font-size: 30px; font-weight: 800; color: #d81b60; line-height: 1.2;
+        }
+        .result-card .result-amount .unit { font-size: 13px; font-weight: 500; color: #999; }
+
+        .result-card .result-sub { font-size: 11px; color: #999; margin-top: 4px; line-height: 1.5; }
+
+        .total-bar {
+            margin-top: 14px; background: linear-gradient(135deg, #fce4ec, #f3e5f5);
+            border-radius: 16px; padding: 16px 20px; text-align: center; border: 2px solid #f8bbd0;
+        }
+        .total-bar .total-label { font-size: 12px; color: #ad1457; opacity: 0.8; letter-spacing: 1px; margin-bottom: 2px; }
+        .total-bar .total-amount { font-size: 20px; font-weight: 700; color: #d81b60; }
+
+        .warning { background: #fff3e0 !important; border-color: #ffcc80 !important; }
+        .warning .result-amount { color: #e65100 !important; }
+        .danger { background: #ffebee !important; border-color: #ef9a9a !important; }
+        .danger .result-amount { color: #c62828 !important; }
+
+        @media (max-width: 500px) {
+            .container { padding: 24px 14px; border-radius: 20px; }
+            .person-fields { grid-template-columns: 1fr 1fr; }
+            .result-area { grid-template-columns: 1fr; }
+            .header h1 { font-size: 22px; }
+        }
+
+        .save-hint { text-align: center; font-size: 11px; color: #bbb; margin-top: 20px; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+
+    <div class="hearts-bg" id="heartsBg"></div>
+
+    <div class="container">
+        <div class="header">
+            <div class="icon">💕</div>
+            <h1>我们的生活费管家</h1>
+            <p class="subtitle">一起规划，一起生活</p>
+        </div>
+
+        <!-- 连接状态 -->
+        <div class="conn-status offline" id="connStatus">
+            <span class="dot"></span><span id="connText">等待连接...</span>
+        </div>
+
+        <!-- 男朋友 -->
+        <div class="person-card boy">
+            <div class="person-header">
+                <div class="person-avatar">🧑‍💼</div>
+                <div class="person-name">👦 男朋友</div>
+                <div class="days-badge" id="boyDaysBadge">-- 天</div>
+            </div>
+            <div class="person-fields">
+                <div class="field-group">
+                    <label>💰 月生活费</label>
+                    <div class="input-wrapper">
+                        <span class="prefix">¥</span>
+                        <input type="number" id="boyBudget" data-person="boy" data-field="budget" placeholder="3000" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>💸 已花费</label>
+                    <div class="input-wrapper">
+                        <span class="prefix">¥</span>
+                        <input type="number" id="boySpent" data-person="boy" data-field="spent" placeholder="1500" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>📅 发放日</label>
+                    <div class="input-wrapper">
+                        <input type="number" class="no-prefix" id="boyPayday" data-person="boy" data-field="payday" placeholder="月底" min="1" max="31">
+                    </div>
+                </div>
+            </div>
+            <div class="payday-hint" id="boyHint" style="display:none;"></div>
+        </div>
+
+        <!-- 女朋友 -->
+        <div class="person-card girl">
+            <div class="person-header">
+                <div class="person-avatar">👩‍💼</div>
+                <div class="person-name">👧 女朋友</div>
+                <div class="days-badge" id="girlDaysBadge">-- 天</div>
+            </div>
+            <div class="person-fields">
+                <div class="field-group">
+                    <label>💰 月生活费</label>
+                    <div class="input-wrapper">
+                        <span class="prefix">¥</span>
+                        <input type="number" id="girlBudget" data-person="girl" data-field="budget" placeholder="3000" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>💸 已花费</label>
+                    <div class="input-wrapper">
+                        <span class="prefix">¥</span>
+                        <input type="number" id="girlSpent" data-person="girl" data-field="spent" placeholder="1200" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>📅 发放日</label>
+                    <div class="input-wrapper">
+                        <input type="number" class="no-prefix" id="girlPayday" data-person="girl" data-field="payday" placeholder="月底" min="1" max="31">
+                    </div>
+                </div>
+            </div>
+            <div class="payday-hint" id="girlHint" style="display:none;"></div>
+        </div>
+
+        <!-- 计算结果 -->
+        <div class="result-area">
+            <div class="result-card boy-result" id="boyResult">
+                <div class="result-label">👦 男朋友 · 每日可用</div>
+                <div class="result-amount" id="boyDaily">-- <span class="unit">元/天</span></div>
+                <div class="result-sub" id="boyRemaining"></div>
+            </div>
+            <div class="result-card girl-result" id="girlResult">
+                <div class="result-label">👧 女朋友 · 每日可用</div>
+                <div class="result-amount" id="girlDaily">-- <span class="unit">元/天</span></div>
+                <div class="result-sub" id="girlRemaining"></div>
+            </div>
+        </div>
+
+        <!-- 合计 -->
+        <div class="total-bar" id="totalBar" style="display:none;">
+            <div class="total-label">💝 两人每日合计可用</div>
+            <div class="total-amount" id="totalDaily">-- 元/天</div>
+        </div>
+
+        <p class="save-hint">💡 数据实时同步，两人打开同一页面即可看到彼此的输入</p>
+    </div>
+
+    <!-- Socket.IO 客户端 -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        (function() {
+            // === DOM 元素 ===
+            const boyBudgetInput  = document.getElementById('boyBudget');
+            const boySpentInput   = document.getElementById('boySpent');
+            const boyPaydayInput  = document.getElementById('boyPayday');
+            const girlBudgetInput = document.getElementById('girlBudget');
+            const girlSpentInput  = document.getElementById('girlSpent');
+            const girlPaydayInput = document.getElementById('girlPayday');
+
+            const boyDaysBadge   = document.getElementById('boyDaysBadge');
+            const girlDaysBadge  = document.getElementById('girlDaysBadge');
+            const boyHint        = document.getElementById('boyHint');
+            const girlHint       = document.getElementById('girlHint');
+
+            const boyDailyEl     = document.getElementById('boyDaily');
+            const boyRemainingEl = document.getElementById('boyRemaining');
+            const girlDailyEl    = document.getElementById('girlDaily');
+            const girlRemainingEl= document.getElementById('girlRemaining');
+            const boyResultCard  = document.getElementById('boyResult');
+            const girlResultCard = document.getElementById('girlResult');
+
+            const totalBar       = document.getElementById('totalBar');
+            const totalDailyEl   = document.getElementById('totalDaily');
+
+            const connStatus     = document.getElementById('connStatus');
+            const connText       = document.getElementById('connText');
+
+            // === 浮动爱心 ===
+            const heartsBg = document.getElementById('heartsBg');
+            const heartEmojis = ['💕', '💖', '💗', '💝', '💘', '❤️', '🩷', '💓'];
+            for (let i = 0; i < 20; i++) {
+                const heart = document.createElement('span');
+                heart.className = 'heart-float';
+                heart.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.bottom = -(Math.random() * 100 + 20) + 'px';
+                heart.style.animationDelay = Math.random() * 8 + 's';
+                heart.style.animationDuration = (8 + Math.random() * 10) + 's';
+                heart.style.fontSize = (16 + Math.random() * 28) + 'px';
+                heartsBg.appendChild(heart);
+            }
+
+            // === 字段名映射 ===
+            const fieldIds = {
+                'boyBudget':  boyBudgetInput,
+                'boySpent':   boySpentInput,
+                'boyPayday':  boyPaydayInput,
+                'girlBudget': girlBudgetInput,
+                'girlSpent':  girlSpentInput,
+                'girlPayday': girlPaydayInput,
+            };
+
+            const personFieldMap = {
+                'boy': { 'budget': 'boyBudget', 'spent': 'boySpent', 'payday': 'boyPayday' },
+                'girl': { 'budget': 'girlBudget', 'spent': 'girlSpent', 'payday': 'girlPayday' },
+            };
+
+            // === 计算剩余天数 ===
+            function calcPayday(dayOfMonth) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+
+                if (!dayOfMonth || dayOfMonth < 1 || dayOfMonth > 31) {
+                    const lastDay = new Date(year, month + 1, 0, 23, 59, 59);
+                    const diffMs = lastDay - now;
+                    const days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+                    return { days, endDate: lastDay, label: '月底' };
+                }
+
+                const maxDay = new Date(year, month + 1, 0).getDate();
+                const targetDay = Math.min(dayOfMonth, maxDay);
+                let targetDate = new Date(year, month, targetDay, 23, 59, 59);
+
+                if (now > targetDate) {
+                    const nextMonth = new Date(year, month + 1, 1);
+                    const nextMaxDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate();
+                    const nextTargetDay = Math.min(dayOfMonth, nextMaxDay);
+                    targetDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), nextTargetDay, 23, 59, 59);
+                }
+
+                const diffMs = targetDate - now;
+                const days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+                return { days, endDate: targetDate, label: `每月${dayOfMonth}号` };
+            }
+
+            function formatDate(date) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}年${m}月${d}日`;
+            }
+
+            // === 主计算 ===
+            function calculate() {
+                const boyBudget  = parseFloat(boyBudgetInput.value) || 0;
+                const boySpent   = parseFloat(boySpentInput.value) || 0;
+                const boyPayday  = parseInt(boyPaydayInput.value) || null;
+                const girlBudget = parseFloat(girlBudgetInput.value) || 0;
+                const girlSpent  = parseFloat(girlSpentInput.value) || 0;
+                const girlPayday = parseInt(girlPaydayInput.value) || null;
+
+                const boyInfo  = calcPayday(boyPayday);
+                const girlInfo = calcPayday(girlPayday);
+
+                updateDaysBadge(boyDaysBadge, boyHint, boyInfo);
+                updateDaysBadge(girlDaysBadge, girlHint, girlInfo);
+                updatePersonResult(boyBudget, boySpent, boyInfo.days, boyDailyEl, boyRemainingEl, boyResultCard);
+                updatePersonResult(girlBudget, girlSpent, girlInfo.days, girlDailyEl, girlRemainingEl, girlResultCard);
+
+                const boyRemaining  = boyBudget - boySpent;
+                const girlRemaining = girlBudget - girlSpent;
+                const boyDailyVal  = boyInfo.days > 0 ? boyRemaining / boyInfo.days : 0;
+                const girlDailyVal = girlInfo.days > 0 ? girlRemaining / girlInfo.days : 0;
+                const totalDailyVal = boyDailyVal + girlDailyVal;
+
+                const hasBoyData  = boyBudget > 0;
+                const hasGirlData = girlBudget > 0;
+
+                if (hasBoyData || hasGirlData) {
+                    totalBar.style.display = 'block';
+                    totalDailyEl.textContent = totalDailyVal >= 0
+                        ? `¥${totalDailyVal.toFixed(2)} 元/天`
+                        : `¥${totalDailyVal.toFixed(2)} 元/天（已超支）`;
+                } else {
+                    totalBar.style.display = 'none';
+                }
+            }
+
+            function updateDaysBadge(badgeEl, hintEl, info) {
+                const days = info.days;
+                if (days === 0) {
+                    badgeEl.textContent = '⏰ 已到';
+                    badgeEl.style.color = '#e65100';
+                } else if (days === 1) {
+                    badgeEl.textContent = '1 天';
+                    badgeEl.style.color = '';
+                } else {
+                    badgeEl.textContent = days + ' 天';
+                    badgeEl.style.color = '';
+                }
+
+                if (info.label === '月底') {
+                    hintEl.style.display = 'block';
+                    hintEl.innerHTML = `📌 未设发放日，默认算到<span class="next-date">本月最后一天（${formatDate(info.endDate)}）</span>`;
+                } else {
+                    hintEl.style.display = 'block';
+                    hintEl.innerHTML = `📌 下一个发放日：<span class="next-date">${formatDate(info.endDate)}</span>（${info.label}）`;
+                }
+            }
+
+            function updatePersonResult(budget, spent, days, dailyEl, remainingEl, card) {
+                const remaining = budget - spent;
+                const daily = days > 0 ? remaining / days : 0;
+
+                card.classList.remove('warning', 'danger');
+
+                if (budget <= 0) {
+                    dailyEl.innerHTML = '-- <span class="unit">元/天</span>';
+                    remainingEl.textContent = '请输入生活费';
+                    return;
+                }
+                if (remaining < 0) {
+                    card.classList.add('danger');
+                    dailyEl.innerHTML = `${daily.toFixed(2)} <span class="unit">元/天</span>`;
+                    remainingEl.textContent = `剩余 ¥${remaining.toFixed(2)}（超支 ${Math.abs(remaining).toFixed(2)} 😱）`;
+                } else if (daily < 30 && remaining > 0 && days > 0) {
+                    card.classList.add('warning');
+                    dailyEl.innerHTML = `${daily.toFixed(2)} <span class="unit">元/天</span>`;
+                    remainingEl.textContent = `剩余 ¥${remaining.toFixed(2)} · 还能花 ${days} 天`;
+                } else if (days === 0) {
+                    dailyEl.innerHTML = '-- <span class="unit">元/天</span>';
+                    remainingEl.textContent = `剩余 ¥${remaining.toFixed(2)} · 今天发生活费！🎉`;
+                } else {
+                    dailyEl.innerHTML = `${daily.toFixed(2)} <span class="unit">元/天</span>`;
+                    remainingEl.textContent = `剩余 ¥${remaining.toFixed(2)} · 还能花 ${days} 天`;
+                }
+            }
+
+            // === Socket.IO 连接 ===
+            const socket = io({
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+            });
+
+            function setConnectionStatus(online, count) {
+                if (online) {
+                    connStatus.className = 'conn-status online';
+                    if (count >= 2) {
+                        connText.textContent = `已连接 · 💑 两人都在线`;
+                    } else {
+                        connText.textContent = '已连接 · 等待对方上线...';
+                    }
+                } else {
+                    connStatus.className = 'conn-status offline';
+                    connText.textContent = '连接断开，正在重连...';
+                }
+            }
+
+            socket.on('connect', () => {
+                console.log('🔗 已连接到服务器');
+            });
+
+            socket.on('init-data', (data) => {
+                console.log('📥 收到服务器数据:', data);
+                // 用服务器数据初始化本地输入框
+                if (data) {
+                    Object.entries(data).forEach(([key, value]) => {
+                        const input = fieldIds[key];
+                        if (input && value !== undefined && value !== null) {
+                            input.value = value;
+                        }
+                    });
+                    calculate();
+                }
+            });
+
+            socket.on('peer-status', (status) => {
+                setConnectionStatus(status.online, status.count);
+            });
+
+            socket.on('data-update', (update) => {
+                console.log('📩 收到远程更新:', update);
+                // update: { person, field, value }
+                const map = personFieldMap[update.person];
+                if (!map) return;
+                const key = map[update.field];
+                if (!key) return;
+                const input = fieldIds[key];
+                if (!input) return;
+
+                // 设置值（programmatic 设置不会触发 input 事件，不会回环）
+                input.value = update.value || '';
+
+                // 闪烁动画提示
+                input.classList.add('remote-update');
+                setTimeout(() => input.classList.remove('remote-update'), 600);
+
+                // 重新计算
+                calculate();
+            });
+
+            socket.on('disconnect', () => {
+                setConnectionStatus(false, 0);
+            });
+
+            // === 输入同步 ===
+            // debounce 定时器映射
+            const debounceTimers = {};
+
+            function syncToServer(person, field, value) {
+                const key = `${person}_${field}`;
+                clearTimeout(debounceTimers[key]);
+                debounceTimers[key] = setTimeout(() => {
+                    if (socket.connected) {
+                        socket.emit('data-update', { person, field, value });
+                        console.log('📤 发送更新:', { person, field, value });
+                    }
+                }, 200); // 200ms 防抖
+            }
+
+            // 给所有输入框绑定事件
+            Object.values(fieldIds).forEach(input => {
+                input.addEventListener('input', function() {
+                    const person = this.dataset.person;
+                    const field = this.dataset.field;
+                    if (person && field) {
+                        syncToServer(person, field, this.value);
+                    }
+                    // 本地立即计算
+                    calculate();
+                });
+
+                input.addEventListener('change', function() {
+                    const person = this.dataset.person;
+                    const field = this.dataset.field;
+                    if (person && field) {
+                        // change 时立即发送（不清除 debounce，直接发送）
+                        const key = `${person}_${field}`;
+                        clearTimeout(debounceTimers[key]);
+                        if (socket.connected) {
+                            socket.emit('data-update', { person, field, value: this.value });
+                        }
+                    }
+                });
+            });
+
+            // === 初始化 ===
+            calculate();
+        })();
+    </script>
+</body>
+</html>
